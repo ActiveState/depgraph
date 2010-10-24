@@ -421,6 +421,7 @@ if __name__ == '__main__':
     import pkg_resources
     class ExampleDepGraph(DepGraph):
         def get_installed_distributions(self):
+            # This just returns the installed packages
             return [
                 Distribution('fabric', '0.9.1', {'': ['pycrypto']}),
                 Distribution('pycrypto', '2.1', {'': []}),
@@ -428,7 +429,8 @@ if __name__ == '__main__':
             ]
         def get_available_distributions(self, name):
             # typically, this should return all distributions in PyPI matching
-            # `name'
+            # `name'. Note that the returned distribution objects must also
+            # contain list of requirements (see get_requirements below)
             distributions = dict(
                 fabric = [
                     Distribution('fabric', '0.9.2', {'': ['pycrypto<=2.1',
@@ -459,6 +461,7 @@ if __name__ == '__main__':
         def version_key(self):
             return pkg_resources.parse_version(self.version)
         def get_requirements(self, with_extras=None):
+            # this returns list of requirements (optionally with extras)
             extras = ('',) + (with_extras or ())
             extras = set(extras)
             for extra in extras:
