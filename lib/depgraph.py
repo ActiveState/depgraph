@@ -1,3 +1,5 @@
+# Copyright (c) 2010 ActiveState Software Inc.
+
 """
     pypm.client.depgraph
     ~~~~~~~~~~~~~~~~~~~~
@@ -20,6 +22,8 @@ from abc import ABCMeta, abstractmethod
 
 from pkg_resources import Requirement
 from pypm.common.util import wrapped  # XXX: drop this dep
+
+__version__ = '0.9'
 
 LOG = logging.getLogger(__name__)
 
