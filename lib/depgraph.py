@@ -21,7 +21,7 @@ from collections import namedtuple, defaultdict
 from abc import ABCMeta, abstractmethod
 
 from pkg_resources import Requirement
-from pypm.common.util import wrapped  # XXX: drop this dep
+
 
 __version__ = '0.9'
 
@@ -201,8 +201,8 @@ class DepGraph(MarkMixin):
     
     You must inherit this class and define the two methods:
     
-      - get_installed_distributions
-      - get_available_distributions
+      - get_installed_distributions()
+      - get_available_distributions(name)
       
     These methods must appropriately (as named) return a list of distribution
     objects with following attributes and methods:
@@ -401,3 +401,74 @@ class _Order:
         """
         indices = dict([(e, i) for (i, e) in enumerate(self._elements)])
         lst.sort(key=lambda e: indices.get(key(e), 99999), reverse=reverse)
+
+
+# copied from pypm/common/util.py
+import textwrap
+def wrapped(txt, prefix='', **options):
+    """Return wrapped text suitable for printing to terminal"""
+    MAX_WIDTH=70 # textwrap.wrap's default
+    return '\n'.join([
+            '{0}{1}'.format(prefix, line)
+            for line in textwrap.wrap(
+                txt, width=MAX_WIDTH-len(prefix), **options)])
+
+
+if __name__ == '__main__':
+    # Just a demonstrating example
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    import pkg_resources
+    class ExampleDepGraph(DepGraph):
+        def get_installed_distributions(self):
+            return [
+                Distribution('fabric', '0.9.1', {'': ['pycrypto']}),
+                Distribution('pycrypto', '2.1', {'': []}),
+                Distribution('virtualenv', '1.4.0', {'': []}),
+            ]
+        def get_available_distributions(self, name):
+            # typically, this should return all distributions in PyPI matching
+            # `name'
+            distributions = dict(
+                fabric = [
+                    Distribution('fabric', '0.9.2', {'': ['pycrypto<=2.1',
+                                                          'paramiko']}),
+                    Distribution('fabric', '0.9.1', {'': ['pycrypto']}),
+                ],
+                paramiko = [
+                    Distribution('paramiko', '0.9', {'': ['pycrypto']}),
+                ],
+                pycrypto = [
+                    Distribution('pycrypto', '2.3', {'': []}),
+                    Distribution('pycrypto', '2.1', {'': []}),
+                ],
+            )
+            if name not in distributions:
+                raise NotImpementedError()
+            return distributions[name]
+    
+    _Distribution = namedtuple('_Distribution', 'name version install_requires')
+    class Distribution(_Distribution):
+        @property
+        def printable_version(self):
+            return self.version
+        @property
+        def full_name(self):
+            return self.name + '-' + self.version
+        @property
+        def version_key(self):
+            return pkg_resources.parse_version(self.version)
+        def get_requirements(self, with_extras=None):
+            extras = ('',) + (with_extras or ())
+            extras = set(extras)
+            for extra in extras:
+                for rs in self.install_requires[extra]:
+                    yield pkg_resources.Requirement.parse(rs)
+            
+    graph = ExampleDepGraph()
+    print('Current install state:-')
+    graph.display()
+    print('State after marking "fabric" to be installed:')
+    graph.add_requirement('fabric')
+    graph.display()
+    
