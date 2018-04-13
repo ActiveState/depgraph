@@ -446,7 +446,7 @@ if __name__ == '__main__':
                 ],
             )
             if name not in distributions:
-                raise NotImpementedError()
+                raise NotImplementedError()
             return distributions[name]
     
     _Distribution = namedtuple('_Distribution', 'name version install_requires')
